@@ -40,11 +40,24 @@ def run_part_1():
             result = result + char
     print(len(result))
 
-def get_uncomp_length(str):
-    pass
+def get_uncomp_length(compressed):
+    if compressed.startswith('('):
+        instruction, after_inst = compressed.split(')', maxsplit=1)
+        len_repeat, times_repeat = (int(num) for num
+                                    in instruction[1:].split('x'))
+        to_repeat = after_inst[:len_repeat]
+        rest = after_inst[len_repeat:]
+        return (times_repeat * get_uncomp_length(to_repeat)
+                + get_uncomp_length(rest))
+    elif '(' in compressed:
+        before_paren, after_paren = compressed.split('(', maxsplit=1)
+        return (get_uncomp_length(before_paren)
+                + get_uncomp_length('(' + after_paren))
+    else:
+        return len(compressed)
 
 def run_part_2():
-    pass
+    print(get_uncomp_length(advent_tools.read_whole_input()))
 
 
 if __name__ == '__main__':

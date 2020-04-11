@@ -1,3 +1,4 @@
+"""Tools to help solve advent of code problems faster"""
 import contextlib
 import datetime
 import os
