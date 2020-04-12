@@ -1,5 +1,6 @@
 import contextlib
 import collections
+import copy
 import functools
 import itertools
 import numpy as np
