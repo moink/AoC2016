@@ -12,18 +12,12 @@ import re
 import advent_tools
 
 
-class State:
+class State(advent_tools.StateForGraphs):
 
     def __init__(self):
         self.generators = collections.defaultdict(set)
         self.microchips = collections.defaultdict(set)
         self.elevator_position = 1
-
-    def __hash__(self):
-        return hash(str(self))
-
-    def __eq__(self, other):
-        return str(self) == str(other)
 
     def __bool__(self):
         if self.elevator_position < 1:
@@ -39,17 +33,28 @@ class State:
 
     def __str__(self):
         result = []
+        replacements = {}
+        elem_count = 0
         for floor in self.get_occupied_floors():
-            floor_result = (
-                        [str(floor), 'G'] + sorted(self.generators[floor]) + [
-                    'M'] + sorted(self.microchips[floor]))
+            floor_result = [str(floor), 'G']
+            for gen in sorted(self.generators[floor]):
+                if gen not in replacements:
+                    replacements[gen] = str(elem_count)
+                    elem_count = elem_count + 1
+                floor_result.append(replacements[gen])
+            floor_result.append('M')
+            for mic in sorted(self.microchips[floor]):
+                if mic not in replacements:
+                    replacements[mic] = str(elem_count)
+                    elem_count = elem_count + 1
+                floor_result.append(replacements[mic])
             result.append('_'.join(floor_result))
         result.append('E' + str(self.elevator_position))
         return ';'.join(result)
 
     def get_occupied_floors(self):
         result = []
-        for floor in range (1, 5):
+        for floor in range(1, 5):
             if ((floor in self.generators.keys() and self.generators[floor])
                     or (floor in self.microchips.keys()
                         and self.microchips[floor])):
@@ -66,50 +71,66 @@ class State:
             for match in re.finditer(mc_pattern, line):
                 self.microchips[floor].add(match.groups()[0])
 
-    def generate_state_steps(self):
+    def possible_next_states(self):
         result = set()
-        for delta_elevator in [-1, 1]:
+        # Only consider moving things down if there are things below the
+        # floor we are on
+        if any((floor < self.elevator_position for
+                floor in self.get_occupied_floors())):
+            move_numbers = {1: [2, 1], -1: [1, 2]}
+        else:
+            move_numbers = {1: [2, 1]}
+        for delta_elevator, nums_things_to_move in move_numbers.items():
             new_elevator = self.elevator_position + delta_elevator
-            for num_microchips in [1, 2]:
-                if len(self.microchips[self.elevator_position]) >= num_microchips:
+            floor_microchips = self.microchips[self.elevator_position]
+            floor_generators = self.generators[self.elevator_position]
+            for move_item_count in nums_things_to_move:
+                if len(floor_microchips) >= move_item_count:
                     for move_microchips in itertools.combinations(
-                            self.microchips[self.elevator_position],
-                            num_microchips):
-                        new_state = copy.deepcopy(self)
-                        new_state.elevator_position = new_elevator
-                        new_state.microchips[self.elevator_position] = \
-                            self.microchips[
-                                self.elevator_position].difference(move_microchips)
-                        new_state.microchips[new_elevator] = \
-                            self.microchips[new_elevator].union(move_microchips)
+                            floor_microchips, move_item_count):
+                        new_state = self.state_moving_stuff(
+                            move_microchips, [], new_elevator)
                         if new_state:
                             result.add(new_state)
-            for num_generators in [1, 2]:
-                if len(self.generators[self.elevator_position]) >= num_generators:
+                if len(floor_generators) >= move_item_count:
                     for move_generators in itertools.combinations(
-                            self.generators[self.elevator_position], num_generators):
-                        new_state = copy.deepcopy(self)
-                        new_state.elevator_position = new_elevator
-                        new_state.generators[self.elevator_position] = \
-                            self.generators[
-                                self.elevator_position].difference(move_generators)
-                        new_state.generators[new_elevator] = \
-                            self.generators[new_elevator].union(move_generators)
+                            floor_generators, move_item_count):
+                        new_state = self.state_moving_stuff(
+                            [], move_generators, new_elevator)
                         if new_state:
                             result.add(new_state)
-            for microchip in self.microchips[self.elevator_position]:
-                for generator in self.generators[self.elevator_position]:
-                    new_state = copy.deepcopy(self)
-                    new_state.elevator_position = new_elevator
-                    new_state.microchips[self.elevator_position].remove(
-                        microchip)
-                    new_state.microchips[new_elevator].add(microchip)
-                    new_state.generators[self.elevator_position].remove(
-                        generator)
-                    new_state.generators[new_elevator].add(generator)
-                    if new_state:
-                        result.add(new_state)
+                if (move_item_count == 2):
+                    # Only consider bringing paired microchips & generators
+                    # togethr
+                    for microchip in floor_microchips:
+                        if microchip in floor_generators:
+                            new_state = self.state_moving_stuff(
+                                [microchip], [microchip], new_elevator)
+                            if new_state:
+                                result.add(new_state)
+                if result:
+                    # if we are going up, and we can move 2 items, do so and
+                    # don't bother trying to move 1 item
+                    # And if we are going down, and we can move 1 item,
+                    # do so and don't bother trying to move 2 items
+                    # Credit: Peter Tseng
+                    # https://github.com/petertseng/adventofcode-rb-2016/blob/master/11_chips_and_generators.rb
+                    break
         return result
+
+    def state_moving_stuff(self, move_microchips, move_generators,
+                           new_elevator):
+        new_state = copy.deepcopy(self)
+        new_state.elevator_position = new_elevator
+        new_state.microchips[self.elevator_position] = self.microchips[
+            self.elevator_position].difference(move_microchips)
+        new_state.microchips[new_elevator] = self.microchips[
+            new_elevator].union(move_microchips)
+        new_state.generators[self.elevator_position] = self.generators[
+            self.elevator_position].difference(move_generators)
+        new_state.generators[new_elevator] = self.generators[
+            new_elevator].union(move_generators)
+        return new_state
 
 
 class Final_state(State):
@@ -122,48 +143,25 @@ class Final_state(State):
             self.microchips[4].update(other_state.microchips[floor])
 
 
-def steps_to_final_state(current_state, final_state):
-    queue = collections.deque()
-    discovered = {str(current_state): 0}
-    queue.append(current_state)
-    while queue:
-        state = queue.popleft()
-        num_steps = discovered[str(state)]
-        # if num_steps % 10 == 0:
-        #     print(state, num_steps)
-        if str(state) == str(final_state):
-            return num_steps
-        new_states = state.generate_state_steps()
-        for new_state in new_states:
-            if str(new_state) not in discovered:
-                discovered[str(new_state)] = num_steps + 1
-                queue.append(new_state)
-            elif num_steps + 1 < discovered[str(new_state)]:
-                discovered[str(new_state)] = num_steps + 1
-
-
 def run_part_1():
     initial_state = State()
     initial_state.read_initial_state()
-    # print(initial_state)
     final_state = Final_state(initial_state)
-    # for state in initial_state.generate_state_steps():
-    #     print(state, bool(state))
-    # print(final_state)
-    # print(bool(final_state))
     start_time = datetime.now()
-    print(steps_to_final_state(initial_state, final_state))
+    print(advent_tools.number_of_bfs_steps(initial_state, final_state))
     elapsed_time = datetime.now() - start_time
     print(elapsed_time)
-    # 641 is too high
-    # print(final_state)
-    # print(steps_to_final_state(initial_state, final_state))
 
 
 def run_part_2():
-    pass
+    initial_state = State()
+    initial_state.read_initial_state()
+    initial_state.microchips[1].update(['elerium', 'dilithium'])
+    initial_state.generators[1].update(['elerium', 'dilithium'])
+    final_state = Final_state(initial_state)
+    print(advent_tools.number_of_bfs_steps(initial_state, final_state))
 
 
 if __name__ == '__main__':
     run_part_1()
-    run_part_2()
+    # run_part_2()
