@@ -74,6 +74,7 @@ def start_coding_today():
     day_of_month = datetime.datetime.today().day
     start_coding(day_of_month)
 
+
 def read_input_lines():
     """Open today's input data and return it as a list of lines
 
@@ -85,6 +86,7 @@ def read_input_lines():
         data = in_file.read().strip().splitlines()
     return data
 
+
 def read_whole_input():
     """Open today's input data and return it as a single string
 
@@ -95,6 +97,7 @@ def read_whole_input():
     with open('input.txt') as in_file:
         data = in_file.read().strip()
     return data
+
 
 def count_times_true(function):
     """Count the number of times some function is true for the input lines
@@ -149,7 +152,9 @@ class StateForGraphs(abc.ABC):
     One requirement to make this work in number_of_bfs_steps, below, is to
     implement __hash__ and __eq__. What I have found is the simplest way to do
     that is to make a unique string representation of each step, and use
-    that to hash and compare the object.
+    that to hash and compare the object. That's what's used by default here,
+    so that only __str__ must be implemented by the child object. But if
+    that doesn't work, just override __hash__ and __eq__ directly.
 
     The other requirement is to implement possible_next_states,
     which provides the edges of the graphs connected to this node, or state.
