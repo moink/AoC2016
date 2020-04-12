@@ -11,6 +11,7 @@ import urllib.request
 from matplotlib import pyplot as plt
 import numpy as np
 
+
 def set_up_directory(day):
     """Make a new directory for working on an advent of code problem
 
@@ -199,6 +200,7 @@ class StateForGraphs(abc.ABC):
         """
         return set(copy.deepcopy(self))
 
+
 def number_of_bfs_steps(current_state, final_state):
     """Perform a breadth-first search and return number of steps taken
 
@@ -231,7 +233,108 @@ def number_of_bfs_steps(current_state, final_state):
                 discovered[new_state] = num_steps + 1
                 queue.append(new_state)
 
+
+class Computer(abc.ABC):
+    """A virtual machine base class for running custom assembly languages
+
+    Seems that Topaz likes to put problems that require virtual machines
+    with registers that run his own small assembly languages. There was one
+    in 2015 (day 23) and one in 2016 (day 12) and a much more complex one
+    used on many days in 2019. This probably doesn't implement enough for
+    the 2019 IntCode computer but it works for 2015 and 2016.
+
+    To use this, inherit from this class. Include the following two lines at
+    the start of the class:
+        operation = advent_tools.Computer.operation
+        return_register = 'a'
+    (setting return_register to the register that the question requests) and
+    then decorate all assembly commands with @operation('cmd') where cmd is
+    the first word of the instruction to call that command. The operations
+    can use self.registers to access the computer's registers
+    """
+
+    operation_map = {}
+
+    def __init__(self):
+        self.registers = collections.defaultdict(int)
+        self.instruction_pointer = 0
+
+    @property
+    @abc.abstractmethod
+    def return_register(self):
+        """The register to return at the end of the program"""
+        pass
+
+    @classmethod
+    def operation(cls, instruction_first_word):
+        """Mark a method as an operation
+
+        Args:
+            instruction_first_word: str
+                First word of the instruction, the part that indicates which
+                operation to run
+
+        Returns:
+            A decorator which marks the method as an operation
+        """
+        def decorator(func):
+            """Decorator to mark a method as an operation"""
+            cls.operation_map[instruction_first_word] = func
+            return func
+        return decorator
+
+    def run_instruction(self, instruction):
+        """Run a single instruction
+
+        Using the first word of the instruction, figure out what operation
+        to run. Pass the rest of the words of the instruction as an argument.
+
+        Args:
+            instruction: str
+                Instruction to run. Must start with a valid operation
+                identifier (key of self.operation_map)
+
+        Returns:
+            None
+        """
+        words = instruction.split()
+        func = self.operation_map[words[0]]
+        func(self, *words[1:])
+
+    def run_program(self, program):
+        """Run a list of instructions through the virtual machine
+
+        The program terminates when the instruction pointer moves past the
+        end of the program
+
+        Args:
+            program: [str]
+                Instructions, each of which starts with a valid operation
+                identifier
+        Returns:
+            int
+                Contents of the return register when the program terminates
+        """
+        while True:
+            try:
+                line = program[self.instruction_pointer]
+            except IndexError:
+                return self.registers[self.return_register]
+            self.run_instruction(line)
+            self.instruction_pointer = self.instruction_pointer + 1
+
+    def run_input_file(self):
+        """Run the contents of today's input file through the virtual machine
+
+        Returns:
+            int
+                Contents of the return register when the program terminates
+        """
+        program = read_input_lines()
+        return self.run_program(program)
+
+
 if __name__ == '__main__':
     # start_coding_today()
-    today = 11
+    today = 12
     start_coding(today)
