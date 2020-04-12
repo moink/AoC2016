@@ -4,6 +4,8 @@ import collections
 import contextlib
 import copy
 import datetime
+import hashlib
+import itertools
 import os
 import shutil
 import urllib.request
@@ -373,7 +375,25 @@ class Computer(abc.ABC):
         return self.run_program(program)
 
 
+def md5_increment(salt):
+    """Append an increasing integer to the salt and run an md5 hash on it
+
+    Args:
+        salt: str
+            First characters of the string to be hashed. The remaining
+            characters are increasing integers starting at 0
+
+    Yields:
+        md5_hash : str
+            An md5 hash of the salt prepended to an integer
+    """
+    for count in itertools.count():
+        to_hash = (salt + str(count)).encode('utf-8')
+        hashed = hashlib.md5(to_hash).hexdigest()
+        yield count, hashed
+
+
 if __name__ == '__main__':
     # start_coding_today()
-    today = 13
+    today = 14
     start_coding(today)
