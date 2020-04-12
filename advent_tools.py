@@ -144,6 +144,7 @@ class PlottingGrid:
         """
         plt.clf()
         plt.imshow(self.grid)
+        plt.colorbar()
         plt.show()
 
 
@@ -215,9 +216,9 @@ def number_of_bfs_steps(current_state, final_state):
         final_state, using state.possible_next_states to find states
         reachable in one step from the current state
 
-    See Also: StateForGraphs, to understand the required methods for the
-    states used in the graph. The states must implement __hash__, __eq__,
-    and possible_next_states
+    See Also: StateForGraphs
+        to understand the required methods for the states used in the graph.
+        The states must implement __hash__, __eq__, and possible_next_states
     """
     queue = collections.deque()
     discovered = {current_state: 0}
@@ -229,10 +230,48 @@ def number_of_bfs_steps(current_state, final_state):
         for new_state in new_states:
             if new_state == final_state:
                 return num_steps + 1
-            elif new_state not in discovered:
+            if new_state not in discovered:
                 discovered[new_state] = num_steps + 1
                 queue.append(new_state)
 
+
+def number_of_reachable_in_steps(current_state, max_steps):
+    """Find the number of states reachable from this one in max steps
+
+    Use a breadth-first search to figure out how many states are reachable
+    from the current state, when each state can provide the steps it can
+    reach in one state.
+
+    Args:
+        current_state: StateForGraphs
+            The state at the beginning of the search; the root of the tree.
+        max_steps: int
+            The maximum number of steps to take, using
+            state.possible_next_states to find states reachable in one step
+            from the current state
+
+    Returns:
+        number_reachable : int
+            Number of distinct states reachable from current_state,
+            with fewer or equal to max_steps steps.
+
+    See Also: StateForGraphs
+        to understand the required methods for the states used in the graph.
+        The states must implement __hash__, __eq__, and possible_next_states
+    """
+    queue = collections.deque()
+    discovered = {current_state: 0}
+    queue.append(current_state)
+    while queue:
+        state = queue.popleft()
+        num_steps = discovered[state]
+        if num_steps < max_steps:
+            new_states = state.possible_next_states()
+            for new_state in new_states:
+                if new_state not in discovered:
+                    discovered[new_state] = num_steps + 1
+                    queue.append(new_state)
+    return len(discovered)
 
 class Computer(abc.ABC):
     """A virtual machine base class for running custom assembly languages
@@ -336,5 +375,5 @@ class Computer(abc.ABC):
 
 if __name__ == '__main__':
     # start_coding_today()
-    today = 12
+    today = 13
     start_coding(today)
