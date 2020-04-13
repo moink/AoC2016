@@ -132,23 +132,15 @@ class State(advent_tools.StateForGraphs):
             new_elevator].union(move_generators)
         return new_state
 
-
-class Final_state(State):
-
-    def __init__(self, other_state):
-        super().__init__()
-        self.elevator_position = 4
-        for floor in other_state.get_occupied_floors():
-            self.generators[4].update(other_state.generators[floor])
-            self.microchips[4].update(other_state.microchips[floor])
-
+    def is_final(self):
+        return ((self.elevator_position == 4)
+                and self.get_occupied_floors() == [4])
 
 def run_part_1():
     initial_state = State()
     initial_state.read_initial_state()
-    final_state = Final_state(initial_state)
     start_time = datetime.now()
-    print(advent_tools.number_of_bfs_steps(initial_state, final_state))
+    print(advent_tools.number_of_bfs_steps(initial_state))
     elapsed_time = datetime.now() - start_time
     print(elapsed_time)
 
@@ -158,10 +150,9 @@ def run_part_2():
     initial_state.read_initial_state()
     initial_state.microchips[1].update(['elerium', 'dilithium'])
     initial_state.generators[1].update(['elerium', 'dilithium'])
-    final_state = Final_state(initial_state)
-    print(advent_tools.number_of_bfs_steps(initial_state, final_state))
+    print(advent_tools.number_of_bfs_steps(initial_state))
 
 
 if __name__ == '__main__':
     run_part_1()
-    # run_part_2()
+    run_part_2()

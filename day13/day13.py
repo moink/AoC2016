@@ -41,10 +41,13 @@ class MazeLocation(advent_tools.StateForGraphs):
         return result
 
 
+    def is_final(self):
+        return self.x == 31 and self.y == 39
+
+
 def run_part_1():
     initial_state = MazeLocation(1, 1)
-    final_state = MazeLocation(31, 39)
-    print(advent_tools.number_of_bfs_steps(initial_state, final_state))
+    print(advent_tools.number_of_bfs_steps(initial_state))
 
 
 def run_part_2():

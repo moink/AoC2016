@@ -160,9 +160,12 @@ class StateForGraphs(abc.ABC):
     so that only __str__ must be implemented by the child object. But if
     that doesn't work, just override __hash__ and __eq__ directly.
 
-    The other requirement is to implement possible_next_states,
+    The second requirement is to implement possible_next_states,
     which provides the edges of the graphs connected to this node, or state.
     That's where the real meat of the problem will end up.
+
+    The third requirement is to implement is_final, which tells the BFS
+    search when it has reached the destination node.
 
     Notes for optimization of breadth-first searches:
         - If two states are equivalent in some way, as in the steps required
@@ -185,6 +188,15 @@ class StateForGraphs(abc.ABC):
         return str(self) == str(other)
 
     @abc.abstractmethod
+    def is_final(self):
+        """Whether this is the final, destination node in the search
+
+        Returns:
+            is_final_node : bool
+        """
+        return False
+
+    @abc.abstractmethod
     def possible_next_states(self):
         """Create and return states reachable from this one in one step
 
@@ -195,7 +207,7 @@ class StateForGraphs(abc.ABC):
         globally suboptimal in this method, by not returning them. The fewer
         states this method returns, the faster the search will go. But if
         the globally optimal next state is not contained in the result,
-        the search will not find the minimum number of states.
+        the search will not find the minimum number of steps.
 
         Returns:
             Set of StateForGraphs
@@ -204,23 +216,22 @@ class StateForGraphs(abc.ABC):
         return set(copy.deepcopy(self))
 
 
-def number_of_bfs_steps(current_state, final_state):
+def number_of_bfs_steps(current_state):
     """Perform a breadth-first search and return number of steps taken
 
     Args:
         current_state: StateForGraphs
             The state at the beginning of the search; the root of the tree.
-        final_state: StateForGraphs
-            The state at the end of the search; the leaf being searched for
 
     Returns:
         The number of steps required to get from current_state to
-        final_state, using state.possible_next_states to find states
+        a final state, using state.possible_next_states to find states
         reachable in one step from the current state
 
     See Also: StateForGraphs
         to understand the required methods for the states used in the graph.
-        The states must implement __hash__, __eq__, and possible_next_states
+        The states must implement __hash__, __eq__, possible_next_states,
+        and is_final
     """
     queue = collections.deque()
     discovered = {current_state: 0}
@@ -230,7 +241,7 @@ def number_of_bfs_steps(current_state, final_state):
         num_steps = discovered[state]
         new_states = state.possible_next_states()
         for new_state in new_states:
-            if new_state == final_state:
+            if new_state.is_final():
                 return num_steps + 1
             if new_state not in discovered:
                 discovered[new_state] = num_steps + 1
@@ -241,8 +252,8 @@ def number_of_reachable_in_steps(current_state, max_steps):
     """Find the number of states reachable from this one in max steps
 
     Use a breadth-first search to figure out how many states are reachable
-    from the current state, when each state can provide the steps it can
-    reach in one state.
+    from the current state, with a maximum of max_steps steps, when each state
+    can provide the states it can reach in one state.
 
     Args:
         current_state: StateForGraphs
@@ -274,6 +285,73 @@ def number_of_reachable_in_steps(current_state, max_steps):
                     discovered[new_state] = num_steps + 1
                     queue.append(new_state)
     return len(discovered)
+
+
+def longest_path(current_state):
+    """Find longest possible path from the current state to the final state
+
+    Args:
+        current_state: StateForGraphs
+            The state at the beginning of the search; the root of the tree.
+
+    Returns:
+        The maximum number of steps that can be used to get from
+        current_state to a final state, using state.possible_next_states to
+        find states reachable in one step from the current state
+
+    See Also: StateForGraphs
+        to understand the required methods for the states used in the graph.
+        The states must implement __hash__, __eq__, possible_next_states,
+        and is_final
+    """
+    queue = collections.deque()
+    discovered = {current_state: 0}
+    queue.append(current_state)
+    lengths = set()
+    while queue:
+        state = queue.popleft()
+        num_steps = discovered[state]
+        new_states = state.possible_next_states()
+        for new_state in new_states:
+            if new_state.is_final():
+                lengths.add(num_steps + 1)
+            elif new_state not in discovered:
+                queue.append(new_state)
+            discovered[new_state] = num_steps + 1
+    return max(lengths)
+
+
+def find_final_state(current_state):
+    """Return the final state found in shortest steps using a BFS search
+
+    Args:
+        current_state: StateForGraphs
+            The state at the beginning of the search; the root of the tree.
+
+    Returns:
+        final_state: StateForGraphs
+            The first state that returns true for its is_final method,
+            when using a breadth-first search
+
+    See Also: StateForGraphs
+        to understand the required methods for the states used in the graph.
+        The states must implement __hash__, __eq__, possible_next_states,
+        and is_final
+    """
+    queue = collections.deque()
+    discovered = {current_state: 0}
+    queue.append(current_state)
+    while queue:
+        state = queue.popleft()
+        num_steps = discovered[state]
+        new_states = state.possible_next_states()
+        for new_state in new_states:
+            if new_state.is_final():
+                return new_state
+            if new_state not in discovered:
+                discovered[new_state] = num_steps + 1
+                queue.append(new_state)
+
 
 class Computer(abc.ABC):
     """A virtual machine base class for running custom assembly languages
@@ -395,5 +473,5 @@ def md5_increment(salt):
 
 if __name__ == '__main__':
     # start_coding_today()
-    today = 16
+    today = 18
     start_coding(today)
