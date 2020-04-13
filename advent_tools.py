@@ -125,6 +125,9 @@ class PlottingGrid:
     Not abstract, since it works on its own, but designed to be inherited
     with some methods added that manipulate self.grid between construction
     and showing
+
+    One note, always use self.grid(y, x) to get and set values, with the
+    column first and the row second. It's weird, but that's how numpy works
     """
 
     def __init__(self, shape):
@@ -135,6 +138,22 @@ class PlottingGrid:
                 Number of rows and number of columns in the grid
         """
         self.grid = np.zeros(shape)
+
+    def read_input_file(self, char_map):
+        """Read and store the grid from today's input file
+
+        Args:
+            char_map: {str: int}
+                Mapping of characters in the file to integers in the numpy
+                array. For example {'.' : 0, '#' : 1} which is typical
+                Topaz-notation for a maze with open areas and walls
+        Returns:
+
+        """
+        lines = read_input_lines()
+        for y_pos, line in enumerate(lines):
+            for x_pos, char in enumerate(line):
+                self.grid[y_pos, x_pos] = char_map[char]
 
     def show(self):
         """Show the grid in a new window
@@ -148,6 +167,24 @@ class PlottingGrid:
         plt.imshow(self.grid)
         plt.colorbar()
         plt.show()
+
+    def sum(self):
+        """Returns the sum of the values in the grid
+
+        Returns:
+            sum : int
+                Sum of the values stored in this object's grid
+        """
+        return np.sum(self.grid)
+
+    def count(self):
+        """Count of non-zero elements in the grid
+
+        Returns:
+            count : int
+                Count of elements of this object's grid which are non-zero
+        """
+        return np.sum(self.grid != 0)
 
 
 class StateForGraphs(abc.ABC):
