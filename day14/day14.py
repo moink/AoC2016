@@ -15,7 +15,7 @@ def md5_increment_2016(salt):
     for count in itertools.count():
         the_hash = (salt + str(count))
         for i in range(2017):
-            the_hash = hashlib.md5(the_hash.encode('utf-8')).hexdigest()
+            the_hash = advent_tools.get_md5_hash(the_hash)
         yield count, the_hash
 
 

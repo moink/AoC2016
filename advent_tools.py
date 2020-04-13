@@ -503,12 +503,25 @@ def md5_increment(salt):
             An md5 hash of the salt prepended to an integer
     """
     for count in itertools.count():
-        to_hash = (salt + str(count)).encode('utf-8')
-        hashed = hashlib.md5(to_hash).hexdigest()
+        hashed = get_md5_hash(salt + str(count))
         yield count, hashed
+
+
+def get_md5_hash(to_hash):
+    """Calculate the md5 hash of a string
+
+    Args:
+        to_hash: str
+            The string to hash
+
+    Returns:
+        md5_hash: str
+            The hex value of the md5 hash
+    """
+    return hashlib.md5(to_hash.encode('utf-8')).hexdigest()
 
 
 if __name__ == '__main__':
     # start_coding_today()
-    today = 18
+    today = 19
     start_coding(today)

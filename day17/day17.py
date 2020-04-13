@@ -2,7 +2,6 @@ import contextlib
 import collections
 import copy
 import functools
-import hashlib
 import itertools
 import numpy as np
 import pandas as pd
@@ -27,7 +26,7 @@ class MazePath(advent_tools.StateForGraphs):
         x, y = self.position
         directions = {'U': (x, y - 1), 'D': (x, y + 1),
                       'L': (x - 1, y), 'R': (x + 1, y)}
-        hashed = hashlib.md5(self.path.encode('utf-8')).hexdigest()
+        hashed = advent_tools.get_md5_hash(self.path)
         open_doors = 'bcdef'
         for door, (direction, (new_x, new_y)) in zip(hashed[:4],
                                                      directions.items()):
@@ -37,7 +36,6 @@ class MazePath(advent_tools.StateForGraphs):
 
 
 def run_part_1():
-    # passcode = 'hhhxzeay'
     passcode = 'hhhxzeay'
     initial_state = MazePath(passcode, (0, 0))
     print(str(advent_tools.find_final_state(initial_state))[len(passcode):])
