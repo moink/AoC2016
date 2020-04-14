@@ -543,5 +543,5 @@ def get_md5_hash(to_hash):
 
 if __name__ == '__main__':
     # start_coding_today()
-    today = 23
+    today = 25
     start_coding(today)
