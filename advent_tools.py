@@ -168,6 +168,26 @@ class PlottingGrid:
         plt.colorbar()
         plt.show()
 
+    def draw(self, pause_time=0.01):
+        """Draw the grid in a new window
+
+        Execution will be paused for pause_time but not stopped. Note that
+        the screen will close after the pause time. It is advised to use
+        this method while animating but then to run show() at the end
+
+        Args:
+            pause_time: float
+                Number of seconds to pause after drawing
+
+        Returns:
+            None
+        """
+        plt.clf()
+        plt.imshow(self.grid)
+        plt.colorbar()
+        plt.draw()
+        plt.pause(pause_time)
+
     def sum(self):
         """Returns the sum of the values in the grid
 
@@ -523,5 +543,5 @@ def get_md5_hash(to_hash):
 
 if __name__ == '__main__':
     # start_coding_today()
-    today = 21
+    today = 22
     start_coding(today)
